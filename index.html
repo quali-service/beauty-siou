@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beauty Siou</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-rose-50 min-h-screen text-slate-900 font-sans">
+
+    <!-- SIDEBAR / BOTTOM NAV -->
+    <nav class="fixed bottom-0 left-0 w-full bg-white border-t border-slate-200 z-50 lg:top-0 lg:left-0 lg:w-64 lg:h-full lg:border-t-0 lg:border-r flex lg:flex-col justify-around lg:justify-start p-2 lg:p-6 gap-2">
+        <div class="hidden lg:block mb-8 px-2">
+            <h2 class="text-xl font-black text-rose-500 tracking-tighter uppercase">Beauty Siou</h2>
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Votre soin, votre praticien</p>
+        </div>
+
+        <button onclick="showSection('finder-section')" id="nav-finder"
+            class="flex flex-col lg:flex-row items-center gap-1 lg:gap-3 px-4 py-2 lg:py-3 rounded-2xl text-slate-500 hover:bg-slate-50 transition-all w-full text-sm font-bold group">
+            <span class="text-xl group-hover:scale-110 transition-transform">✨</span>
+            <span>Trouver</span>
+        </button>
+
+        <button onclick="showSection('booking-section')" id="nav-booking"
+            class="flex flex-col lg:flex-row items-center gap-1 lg:gap-3 px-4 py-2 lg:py-3 rounded-2xl text-slate-500 hover:bg-slate-50 transition-all w-full text-sm font-bold group">
+            <span class="text-xl group-hover:scale-110 transition-transform">📅</span>
+            <span>Réserver</span>
+        </button>
+
+        <button onclick="showSection('admin-section')" id="nav-admin"
+            class="flex flex-col lg:flex-row items-center gap-1 lg:gap-3 px-4 py-2 lg:py-3 rounded-2xl text-slate-500 hover:bg-slate-50 transition-all w-full text-sm font-bold group">
+            <span class="text-xl group-hover:scale-110 transition-transform">⚙️</span>
+            <span>Admin</span>
+        </button>
+    </nav>
+
+    <main class="lg:ml-64 p-4 pb-24 lg:pb-8 min-h-screen flex items-center justify-center">
+
+        <!-- ===== FINDER SECTION ===== -->
+        <section id="finder-section" class="hidden w-full max-w-lg animate-reveal">
+
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-extrabold text-slate-800 tracking-tight">Quel soin vous correspond ?</h1>
+                <p class="text-slate-500 mt-2 text-sm">Répondez à quelques questions pour découvrir les soins adaptés à votre situation.</p>
+            </div>
+
+            <!-- Step indicator -->
+            <div id="step-indicator" class="flex items-center justify-center gap-2 mb-6">
+                <div id="step-dot-1" class="w-2 h-2 rounded-full bg-rose-400 transition-all"></div>
+                <div id="step-dot-2" class="w-2 h-2 rounded-full bg-slate-200 transition-all"></div>
+                <div id="step-dot-3" class="w-2 h-2 rounded-full bg-slate-200 transition-all"></div>
+            </div>
+
+            <div class="glass-card rounded-[2rem] shadow-xl overflow-hidden">
+                <div class="h-1.5 w-full bg-slate-100">
+                    <div id="finder-progress-bar" class="h-full bg-rose-400 transition-all duration-500" style="width: 0%"></div>
+                </div>
+                <div class="p-6 sm:p-10">
+
+                    <div id="finder-loading" class="hidden flex flex-col items-center py-12 space-y-4">
+                        <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-rose-400"></div>
+                        <p class="text-slate-400 italic">Analyse en cours...</p>
+                    </div>
+
+                    <div id="finder-content">
+                        <!-- Steps injected by app.js -->
+                    </div>
+
+                    <div id="finder-results" class="hidden">
+                        <!-- Results injected by app.js -->
+                    </div>
+
+                </div>
+            </div>
+
+            <p class="text-center text-xs text-slate-300 mt-4 select-none">← glisser pour revenir en arrière</p>
+        </section>
+
+        <!-- ===== BOOKING SECTION ===== -->
+        <section id="booking-section" class="hidden w-full max-w-2xl animate-reveal self-start">
+
+            <div class="mb-8">
+                <h2 class="text-3xl font-extrabold text-slate-800 tracking-tight">Nos Praticiens</h2>
+                <p class="text-slate-500 mt-2 text-sm">Choisissez un praticien et réservez votre séance.</p>
+            </div>
+
+            <!-- Procedure filter bar -->
+            <div class="mb-6">
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">Filtrer par soin</p>
+                <div id="procedure-filters" class="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+                    <button onclick="setProcedureFilter(null, this)"
+                        class="procedure-chip flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-bold transition-all bg-rose-500 text-white shadow-sm">
+                        Tous
+                    </button>
+                </div>
+            </div>
+
+            <!-- Practitioners grid -->
+            <div id="practitioners-grid" class="flex flex-col gap-3">
+                <div class="flex justify-center p-12">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-rose-400"></div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- ===== ADMIN SECTION ===== -->
+        <section id="admin-section" class="hidden w-full max-w-2xl animate-reveal">
+
+            <div class="mb-8">
+                <h2 class="text-2xl font-bold text-slate-800">Administration</h2>
+                <p class="text-slate-500 text-sm">Gérez les soins et les praticiens.</p>
+            </div>
+
+            <!-- Admin tabs -->
+            <div class="flex gap-2 mb-6">
+                <button id="tab-procedures" onclick="switchAdminTab('procedures')"
+                    class="flex-1 py-2.5 rounded-2xl text-sm font-bold transition-all bg-rose-500 text-white shadow-sm">
+                    Soins
+                </button>
+                <button id="tab-practitioners" onclick="switchAdminTab('practitioners')"
+                    class="flex-1 py-2.5 rounded-2xl text-sm font-bold transition-all bg-slate-100 text-slate-500 hover:bg-slate-200">
+                    Praticiens
+                </button>
+            </div>
+
+            <!-- Add Procedure form -->
+            <div id="admin-procedures" class="bg-white p-8 rounded-[2.5rem] shadow-xl border border-slate-100 relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-2 h-full bg-rose-400"></div>
+                <h3 class="font-bold text-slate-700 mb-6">Ajouter un soin</h3>
+                <form id="procedure-form" class="space-y-5">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Nom du soin</label>
+                        <input type="text" name="name" required
+                            class="w-full px-4 py-3 rounded-2xl border-2 border-slate-50 focus:border-rose-400 bg-slate-50/50 outline-none transition-all"
+                            placeholder="Ex: Soin visage hydratant">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Catégorie</label>
+                        <input type="text" name="category" required
+                            class="w-full px-4 py-3 rounded-2xl border-2 border-slate-50 focus:border-rose-400 bg-slate-50/50 outline-none transition-all"
+                            placeholder="Ex: Visage, Corps, Ongles...">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Description</label>
+                        <textarea name="description" rows="3" required
+                            class="w-full px-4 py-3 rounded-2xl border-2 border-slate-50 focus:border-rose-400 bg-slate-50/50 outline-none transition-all"
+                            placeholder="Décrivez le soin..."></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Durée (minutes)</label>
+                        <input type="number" name="duration_minutes" min="15" step="15"
+                            class="w-full px-4 py-3 rounded-2xl border-2 border-slate-50 focus:border-rose-400 bg-slate-50/50 outline-none transition-all"
+                            placeholder="60">
+                    </div>
+                    <button type="submit" id="procedure-submit-btn"
+                        class="w-full py-4 bg-slate-900 text-white font-bold rounded-2xl hover:bg-rose-500 transform active:scale-[0.98] transition-all shadow-lg">
+                        Enregistrer le soin
+                    </button>
+                </form>
+            </div>
+
+            <!-- Add Practitioner form -->
+            <div id="admin-practitioners" class="hidden bg-white p-8 rounded-[2.5rem] shadow-xl border border-slate-100 relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-2 h-full bg-rose-400"></div>
+                <h3 class="font-bold text-slate-700 mb-6">Ajouter un praticien</h3>
+                <form id="practitioner-form" class="space-y-5">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Nom complet</label>
+                        <input type="text" name="name" required
+                            class="w-full px-4 py-3 rounded-2xl border-2 border-slate-50 focus:border-rose-400 bg-slate-50/50 outline-none transition-all"
+                            placeholder="Ex: Marie Dupont">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Bio</label>
+                        <textarea name="bio" rows="3"
+                            class="w-full px-4 py-3 rounded-2xl border-2 border-slate-50 focus:border-rose-400 bg-slate-50/50 outline-none transition-all"
+                            placeholder="Présentation courte..."></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Email de contact</label>
+                        <input type="email" name="email"
+                            class="w-full px-4 py-3 rounded-2xl border-2 border-slate-50 focus:border-rose-400 bg-slate-50/50 outline-none transition-all"
+                            placeholder="marie@exemple.com">
+                    </div>
+                    <button type="submit" id="practitioner-submit-btn"
+                        class="w-full py-4 bg-slate-900 text-white font-bold rounded-2xl hover:bg-rose-500 transform active:scale-[0.98] transition-all shadow-lg">
+                        Enregistrer le praticien
+                    </button>
+                </form>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- ===== BOOKING MODAL ===== -->
+    <div id="booking-modal" class="hidden fixed inset-0 z-[200] flex items-end justify-center p-4 bg-black/50"
+         onclick="if(event.target===this)closeBookingModal()">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg p-6 space-y-5 animate-slide-up">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-bold text-slate-800">Réserver une séance</h3>
+                <button onclick="closeBookingModal()" class="text-slate-400 hover:text-slate-700 text-2xl leading-none">&times;</button>
+            </div>
+
+            <div id="booking-practitioner-info" class="flex items-center gap-4 p-4 bg-rose-50 rounded-2xl">
+                <!-- Injected by app.js -->
+            </div>
+
+            <form id="booking-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Votre prénom</label>
+                    <input type="text" name="client_name" required
+                        class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-rose-400 focus:ring-4 focus:ring-rose-50 outline-none transition-all"
+                        placeholder="Marie">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Votre email</label>
+                    <input type="email" name="client_email" required
+                        class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-rose-400 focus:ring-4 focus:ring-rose-50 outline-none transition-all"
+                        placeholder="vous@exemple.com">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Date souhaitée</label>
+                    <input type="date" name="preferred_date" required
+                        class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-rose-400 focus:ring-4 focus:ring-rose-50 outline-none transition-all">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Message (optionnel)</label>
+                    <textarea name="message" rows="2"
+                        class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-rose-400 focus:ring-4 focus:ring-rose-50 outline-none transition-all"
+                        placeholder="Précisions sur votre demande..."></textarea>
+                </div>
+                <button type="submit" id="booking-submit-btn"
+                    class="w-full py-4 bg-rose-500 text-white font-bold rounded-2xl hover:bg-rose-600 active:scale-[0.98] transition-all shadow-lg">
+                    Confirmer la réservation
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
