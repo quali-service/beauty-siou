@@ -13,6 +13,10 @@ let allPractitioners = [];
 let procedureFilter = null;
 let currentPractitioner = null;
 
+let lookupCache = {};
+let selectedIds = { indications: new Set(), zones: new Set(), technologies: new Set() };
+let ratings = { invasivite: 0, douleur: 0 };
+
 // Finder steps: each step asks a question and narrows down procedures
 const FINDER_STEPS = [
     {
@@ -60,7 +64,153 @@ window.showSection = function(sectionId) {
 
     if (sectionId === 'finder-section') renderFinderStep();
     if (sectionId === 'booking-section') loadPractitioners();
+    if (sectionId === 'admin-section') initProcedureForm();
 };
+
+// --- 3b. PROCEDURE FORM LOOKUPS ---
+
+async function loadAllLookups() {
+    const tables = ['indications', 'zones', 'technologies', 'durees_eviction', 'durees_effets', 'prix_indicatifs'];
+    await Promise.all(tables.map(async (table) => {
+        try {
+            const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?select=id,label&order=label`, { headers: HEADERS });
+            lookupCache[table] = await res.json() || [];
+        } catch (e) {
+            console.error(`[loadAllLookups] ${table}`, e);
+            lookupCache[table] = [];
+        }
+    }));
+}
+
+function renderChips(containerId, table) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    const items = lookupCache[table] || [];
+    const selected = selectedIds[table];
+
+    container.innerHTML = items.map(item => {
+        const isSelected = selected && selected.has(item.id);
+        const activeClasses = 'border-rose-400 bg-rose-50 text-rose-600';
+        const inactiveClasses = 'border-slate-200 text-slate-500 hover:border-rose-300';
+        return `<button type="button"
+            onclick="toggleChip('${table}', ${item.id}, this)"
+            class="px-3 py-1.5 rounded-full border-2 text-xs font-semibold transition-all ${isSelected ? activeClasses : inactiveClasses}">
+            ${escapeHtml(item.label)}
+        </button>`;
+    }).join('') + `<button type="button"
+        onclick="addLookupValue('${table}')"
+        class="px-3 py-1.5 rounded-full border-2 border-dashed border-slate-300 text-slate-400 text-xs font-semibold hover:border-rose-400 hover:text-rose-500 transition-all">
+        + Ajouter
+    </button>`;
+}
+
+function renderSelect(selectId, table) {
+    const select = document.getElementById(selectId);
+    if (!select) return;
+    const items = lookupCache[table] || [];
+    select.innerHTML = '<option value="">-- Choisir --</option>' +
+        items.map(item => `<option value="${item.id}">${escapeHtml(item.label)}</option>`).join('');
+}
+
+function renderRating(containerId, field) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    const current = ratings[field] || 0;
+    container.innerHTML = [1, 2, 3, 4, 5].map(n => {
+        const isActive = n <= current;
+        const activeClasses = 'border-rose-400 bg-rose-400 text-white';
+        const inactiveClasses = 'border-slate-200 text-slate-400 hover:border-rose-300';
+        return `<button type="button"
+            onclick="setRating('${field}', ${n})"
+            class="w-9 h-9 rounded-full border-2 text-sm font-bold transition-all flex items-center justify-center ${isActive ? activeClasses : inactiveClasses}">
+            ${n}
+        </button>`;
+    }).join('');
+}
+
+window.toggleChip = function(table, id, btn) {
+    const set = selectedIds[table];
+    if (!set) return;
+    if (set.has(id)) {
+        set.delete(id);
+        btn.className = btn.className
+            .replace('border-rose-400', 'border-slate-200')
+            .replace('bg-rose-50', '')
+            .replace('text-rose-600', 'text-slate-500 hover:border-rose-300');
+    } else {
+        set.add(id);
+        btn.className = btn.className
+            .replace('border-slate-200', 'border-rose-400')
+            .replace('text-slate-500', 'text-rose-600')
+            .replace('hover:border-rose-300', '')
+            .replace('  ', ' ');
+        if (!btn.className.includes('bg-rose-50')) {
+            btn.className = btn.className.replace('border-rose-400', 'border-rose-400 bg-rose-50');
+        }
+    }
+};
+
+window.setRating = function(field, value) {
+    ratings[field] = value;
+    renderRating(`${field}-rating`, field);
+};
+
+window.addLookupValue = async function(table) {
+    const label = prompt('Nouveau libellé :');
+    if (!label || !label.trim()) return;
+    try {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+            method: 'POST',
+            headers: { ...HEADERS, 'Prefer': 'return=representation' },
+            body: JSON.stringify({ label: label.trim() })
+        });
+        if (!res.ok) throw new Error('Erreur lors de la création');
+        const [newItem] = await res.json();
+
+        if (!lookupCache[table]) lookupCache[table] = [];
+        lookupCache[table].push(newItem);
+        lookupCache[table].sort((a, b) => a.label.localeCompare(b.label));
+
+        const chipsMap = {
+            indications: 'indications-chips',
+            zones: 'zones-chips',
+            technologies: 'technologies-chips'
+        };
+        const selectMap = {
+            durees_eviction: 'duree-eviction-select',
+            durees_effets: 'duree-effets-select',
+            prix_indicatifs: 'prix-indicatif-select'
+        };
+
+        if (chipsMap[table]) {
+            renderChips(chipsMap[table], table);
+            selectedIds[table].add(newItem.id);
+            renderChips(chipsMap[table], table);
+        } else if (selectMap[table]) {
+            renderSelect(selectMap[table], table);
+            const select = document.getElementById(selectMap[table]);
+            if (select) select.value = newItem.id;
+        }
+    } catch (err) {
+        alert('Erreur : ' + err.message);
+    }
+};
+
+async function initProcedureForm() {
+    selectedIds = { indications: new Set(), zones: new Set(), technologies: new Set() };
+    ratings = { invasivite: 0, douleur: 0 };
+
+    await loadAllLookups();
+
+    renderChips('indications-chips', 'indications');
+    renderChips('zones-chips', 'zones');
+    renderChips('technologies-chips', 'technologies');
+    renderSelect('duree-eviction-select', 'durees_eviction');
+    renderSelect('duree-effets-select', 'durees_effets');
+    renderSelect('prix-indicatif-select', 'prix_indicatifs');
+    renderRating('invasivite-rating', 'invasivite');
+    renderRating('douleur-rating', 'douleur');
+}
 
 // --- 4. FINDER ---
 
@@ -365,29 +515,74 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const btn = document.getElementById('procedure-submit-btn');
             const formData = new FormData(e.target);
+
+            const noteCommunaute = formData.get('note_communaute');
             const payload = {
                 name: formData.get('name'),
-                category: formData.get('category'),
-                description: formData.get('description'),
-                duration_minutes: formData.get('duration_minutes') ? parseInt(formData.get('duration_minutes')) : null,
+                duree_eviction_id: formData.get('duree_eviction_id') || null,
+                duree_effets_id: formData.get('duree_effets_id') || null,
+                prix_indicatif_id: formData.get('prix_indicatif_id') || null,
+                invasivite: ratings.invasivite || null,
+                douleur: ratings.douleur || null,
+                note_communaute: noteCommunaute !== '' ? parseFloat(noteCommunaute) : null,
+                description: formData.get('description') || null,
+                deroulement: formData.get('deroulement') || null,
+                recommandations_post_op: formData.get('recommandations_post_op') || null,
+                resultats_attendus: formData.get('resultats_attendus') || null,
                 created_at: new Date().toISOString()
             };
+
             try {
                 btn.disabled = true;
                 btn.textContent = 'Envoi... ⏳';
+
                 const res = await fetch(`${SUPABASE_URL}/rest/v1/procedures`, {
                     method: 'POST',
-                    headers: { ...HEADERS, 'Prefer': 'return=minimal' },
+                    headers: { ...HEADERS, 'Prefer': 'return=representation' },
                     body: JSON.stringify(payload)
                 });
                 if (!res.ok) throw new Error("Erreur lors de l'enregistrement");
-                alert('Soin ajouté !');
+                const [newProcedure] = await res.json();
+                const procedureId = newProcedure.id;
+
+                // Insert junction records in parallel
+                const junctionInserts = [];
+                if (selectedIds.indications.size > 0) {
+                    const rows = [...selectedIds.indications].map(id => ({ procedure_id: procedureId, indication_id: id }));
+                    junctionInserts.push(fetch(`${SUPABASE_URL}/rest/v1/procedures_indications`, {
+                        method: 'POST',
+                        headers: { ...HEADERS, 'Prefer': 'return=minimal' },
+                        body: JSON.stringify(rows)
+                    }));
+                }
+                if (selectedIds.zones.size > 0) {
+                    const rows = [...selectedIds.zones].map(id => ({ procedure_id: procedureId, zone_id: id }));
+                    junctionInserts.push(fetch(`${SUPABASE_URL}/rest/v1/procedures_zones`, {
+                        method: 'POST',
+                        headers: { ...HEADERS, 'Prefer': 'return=minimal' },
+                        body: JSON.stringify(rows)
+                    }));
+                }
+                if (selectedIds.technologies.size > 0) {
+                    const rows = [...selectedIds.technologies].map(id => ({ procedure_id: procedureId, technologie_id: id }));
+                    junctionInserts.push(fetch(`${SUPABASE_URL}/rest/v1/procedures_technologies`, {
+                        method: 'POST',
+                        headers: { ...HEADERS, 'Prefer': 'return=minimal' },
+                        body: JSON.stringify(rows)
+                    }));
+                }
+                await Promise.all(junctionInserts);
+
+                alert('Procédure ajoutée !');
                 e.target.reset();
+                selectedIds = { indications: new Set(), zones: new Set(), technologies: new Set() };
+                ratings = { invasivite: 0, douleur: 0 };
+                initProcedureForm();
             } catch (err) {
                 alert('Erreur : ' + err.message);
             } finally {
                 btn.disabled = false;
-                btn.textContent = 'Enregistrer le soin';
+                btn.textContent = 'Enregistrer la procédure';
             }
         });
     }
