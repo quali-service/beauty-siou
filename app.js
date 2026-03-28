@@ -212,7 +212,7 @@ async function loadFinderData() {
 
     try {
         const select = [
-            'id,name,invasivite,douleur,note_communaute',
+            'id,name,invasivite,douleur,note_communaute,description,deroulement,recommandations_post_op,resultats_attendus',
             'durees_eviction(id,label)',
             'durees_effets(id,label)',
             'prix_indicatifs(id,label)',
@@ -404,6 +404,17 @@ function renderFinderResults(procedures) {
                 ${p.douleur ? `<div class="flex items-center gap-1.5"><span class="text-slate-400">Douleur </span><span class="flex gap-0.5">${renderDots(p.douleur)}</span></div>` : ''}
                 ${p.note_communaute != null ? `<div><span class="text-slate-400">Note </span><span class="font-semibold text-rose-500">${p.note_communaute}%</span></div>` : ''}
             </div>
+            ${[
+                { label: 'Description', value: p.description },
+                { label: 'Déroulement', value: p.deroulement },
+                { label: 'Recommandations post-op', value: p.recommandations_post_op },
+                { label: 'Résultats attendus', value: p.resultats_attendus }
+            ].filter(f => f.value).map(f => `
+                <div class="mt-3 pt-3 border-t border-slate-100">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">${f.label}</p>
+                    <p class="text-sm text-slate-600">${escapeHtml(f.value)}</p>
+                </div>
+            `).join('')}
         </div>`;
     }).join('');
 }
