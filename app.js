@@ -402,7 +402,7 @@ function renderFinderResults(procedures) {
                 ${p.durees_effets ? `<div><span class="text-slate-400">Effets </span><span class="font-semibold text-slate-700">${escapeHtml(p.durees_effets.label)}</span></div>` : ''}
                 ${p.invasivite ? `<div class="flex items-center gap-1.5"><span class="text-slate-400">Invasivité </span><span class="flex gap-0.5">${renderDots(p.invasivite)}</span></div>` : ''}
                 ${p.douleur ? `<div class="flex items-center gap-1.5"><span class="text-slate-400">Douleur </span><span class="flex gap-0.5">${renderDots(p.douleur)}</span></div>` : ''}
-                ${p.note_communaute != null ? `<div><span class="text-slate-400">Note </span><span class="font-semibold text-rose-500">${p.note_communaute}%</span></div>` : ''}
+                ${p.note_communaute != null ? `<div><span class="text-slate-400">Note de la communauté </span><span class="font-semibold text-rose-500">${p.note_communaute}%</span></div>` : ''}
             </div>
             ${[
                 { label: 'Description', value: p.description },
