@@ -48,8 +48,9 @@ window.showSection = function(sectionId) {
     Object.entries(navMap).forEach(([sId, btnId]) => {
         const btn = document.getElementById(btnId);
         if (!btn) return;
-        btn.classList.toggle('bg-rose-500', sId === sectionId);
-        btn.classList.toggle('text-white', sId === sectionId);
+        btn.classList.toggle('bg-blue-50', sId === sectionId);
+        btn.classList.toggle('text-blue-700', sId === sectionId);
+        btn.classList.toggle('font-semibold', sId === sectionId);
         btn.classList.toggle('text-slate-500', sId !== sectionId);
     });
 
@@ -81,8 +82,8 @@ function renderChips(containerId, table) {
 
     container.innerHTML = items.map(item => {
         const isSelected = selected && selected.has(item.id);
-        const activeClasses = 'border-rose-400 bg-rose-50 text-rose-600';
-        const inactiveClasses = 'border-slate-200 text-slate-500 hover:border-rose-300';
+        const activeClasses = 'border-blue-500 bg-blue-50 text-blue-700';
+        const inactiveClasses = 'border-slate-200 text-slate-500 hover:border-blue-300';
         return `<button type="button"
             onclick="toggleChip('${table}', ${item.id}, this)"
             class="px-3 py-1.5 rounded-full border-2 text-xs font-semibold transition-all ${isSelected ? activeClasses : inactiveClasses}">
@@ -90,7 +91,7 @@ function renderChips(containerId, table) {
         </button>`;
     }).join('') + `<button type="button"
         onclick="addLookupValue('${table}')"
-        class="px-3 py-1.5 rounded-full border-2 border-dashed border-slate-300 text-slate-400 text-xs font-semibold hover:border-rose-400 hover:text-rose-500 transition-all">
+        class="px-3 py-1.5 rounded-full border-2 border-dashed border-slate-300 text-slate-400 text-xs font-semibold hover:border-blue-400 hover:text-blue-500 transition-all">
         + Ajouter
     </button>`;
 }
@@ -109,8 +110,8 @@ function renderRating(containerId, field) {
     const current = ratings[field] || 0;
     container.innerHTML = [1, 2, 3, 4, 5].map(n => {
         const isActive = n <= current;
-        const activeClasses = 'border-rose-400 bg-rose-400 text-white';
-        const inactiveClasses = 'border-slate-200 text-slate-400 hover:border-rose-300';
+        const activeClasses = 'border-blue-600 bg-blue-600 text-white';
+        const inactiveClasses = 'border-slate-200 text-slate-400 hover:border-blue-300';
         return `<button type="button"
             onclick="setRating('${field}', ${n})"
             class="w-9 h-9 rounded-full border-2 text-sm font-bold transition-all flex items-center justify-center ${isActive ? activeClasses : inactiveClasses}">
@@ -125,18 +126,18 @@ window.toggleChip = function(table, id, btn) {
     if (set.has(id)) {
         set.delete(id);
         btn.className = btn.className
-            .replace('border-rose-400', 'border-slate-200')
-            .replace('bg-rose-50', '')
-            .replace('text-rose-600', 'text-slate-500 hover:border-rose-300');
+            .replace('border-blue-500', 'border-slate-200')
+            .replace('bg-blue-50', '')
+            .replace('text-blue-700', 'text-slate-500 hover:border-blue-300');
     } else {
         set.add(id);
         btn.className = btn.className
-            .replace('border-slate-200', 'border-rose-400')
-            .replace('text-slate-500', 'text-rose-600')
-            .replace('hover:border-rose-300', '')
+            .replace('border-slate-200', 'border-blue-500')
+            .replace('text-slate-500', 'text-blue-700')
+            .replace('hover:border-blue-300', '')
             .replace('  ', ' ');
-        if (!btn.className.includes('bg-rose-50')) {
-            btn.className = btn.className.replace('border-rose-400', 'border-rose-400 bg-rose-50');
+        if (!btn.className.includes('bg-blue-50')) {
+            btn.className = btn.className.replace('border-blue-500', 'border-blue-500 bg-blue-50');
         }
     }
 };
@@ -208,7 +209,7 @@ async function initProcedureForm() {
 async function loadFinderData() {
     const list = document.getElementById('finder-results-list');
     if (!list) return;
-    list.innerHTML = `<div class="flex justify-center p-12"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-rose-400"></div></div>`;
+    list.innerHTML = `<div class="flex justify-center p-12"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div></div>`;
 
     try {
         const select = [
@@ -228,7 +229,7 @@ async function loadFinderData() {
         renderAllFilters();
         renderFinderResults(allFinderProcedures);
     } catch (err) {
-        list.innerHTML = `<p class="text-rose-500 text-center p-8">Erreur de connexion.</p>`;
+        list.innerHTML = `<p class="text-red-500 text-center p-8">Erreur de connexion.</p>`;
     }
 }
 
@@ -305,8 +306,8 @@ function renderFilterChips(containerId, dimension, labelMap, activeSet) {
         return `<button type="button" onclick="toggleFinderFilter('${dimension}', ${id})"
             class="px-2.5 py-1 rounded-full border text-xs font-semibold transition-all ${
                 isActive
-                    ? 'border-rose-400 bg-rose-50 text-rose-600'
-                    : 'border-slate-200 text-slate-500 hover:border-rose-300 hover:text-rose-500'
+                    ? 'border-blue-600 bg-blue-50 text-blue-700'
+                    : 'border-slate-200 text-slate-500 hover:border-blue-300 hover:text-blue-600'
             }">${escapeHtml(label)}</button>`;
     }).join('');
 }
@@ -318,8 +319,8 @@ function renderFilterRating(containerId, field, currentMax) {
         <button type="button" onclick="setFinderRatingFilter('${field}', ${n})"
             class="w-8 h-8 rounded-full border text-xs font-bold transition-all ${
                 currentMax >= n
-                    ? 'border-rose-400 bg-rose-400 text-white'
-                    : 'border-slate-200 text-slate-400 hover:border-rose-300'
+                    ? 'border-blue-600 bg-blue-600 text-white'
+                    : 'border-slate-200 text-slate-400 hover:border-blue-300'
             }">${n}</button>
     `).join('');
 }
@@ -362,7 +363,7 @@ window.resetFinderFilters = function() {
 function renderDots(value) {
     if (!value) return '<span class="text-slate-300 text-xs">—</span>';
     return [1, 2, 3, 4, 5].map(n =>
-        `<span class="w-2 h-2 rounded-full inline-block ${n <= value ? 'bg-rose-400' : 'bg-slate-200'}"></span>`
+        `<span class="w-2 h-2 rounded-full inline-block ${n <= value ? 'bg-blue-500' : 'bg-slate-200'}"></span>`
     ).join('');
 }
 
@@ -393,7 +394,7 @@ function renderFinderResults(procedures) {
             ...technologies.map(l => `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-600">${escapeHtml(l)}</span>`)
         ].join('');
 
-        return `<div class="bg-white rounded-2xl border border-slate-100 p-5 hover:border-rose-200 hover:shadow-sm transition-all">
+        return `<div class="bg-white rounded-xl border border-slate-200 p-5 hover:border-blue-200 hover:shadow-sm transition-all">
             <h3 class="font-bold text-slate-800 text-base mb-2">${escapeHtml(p.name)}</h3>
             ${tags ? `<div class="flex flex-wrap gap-1 mb-3">${tags}</div>` : ''}
             <div class="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2 text-xs text-slate-500">
@@ -402,7 +403,7 @@ function renderFinderResults(procedures) {
                 ${p.durees_effets ? `<div><span class="text-slate-400">Effets </span><span class="font-semibold text-slate-700">${escapeHtml(p.durees_effets.label)}</span></div>` : ''}
                 ${p.invasivite ? `<div class="flex items-center gap-1.5"><span class="text-slate-400">Invasivité </span><span class="flex gap-0.5">${renderDots(p.invasivite)}</span></div>` : ''}
                 ${p.douleur ? `<div class="flex items-center gap-1.5"><span class="text-slate-400">Douleur </span><span class="flex gap-0.5">${renderDots(p.douleur)}</span></div>` : ''}
-                ${p.note_communaute != null ? `<div><span class="text-slate-400">Note de la communauté </span><span class="font-semibold text-rose-500">${p.note_communaute}%</span></div>` : ''}
+                ${p.note_communaute != null ? `<div><span class="text-slate-400">Note de la communauté </span><span class="font-semibold text-blue-700">${p.note_communaute}%</span></div>` : ''}
             </div>
             ${[
                 { label: 'Description', value: p.description },
@@ -424,7 +425,7 @@ function renderFinderResults(procedures) {
 async function loadPractitioners() {
     const grid = document.getElementById('practitioners-grid');
     if (!grid) return;
-    grid.innerHTML = `<div class="flex justify-center p-12"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-rose-400"></div></div>`;
+    grid.innerHTML = `<div class="flex justify-center p-12"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div></div>`;
 
     try {
         const res = await fetch(`${SUPABASE_URL}/rest/v1/practitioners?select=*,practitioner_procedures(procedure_id,procedures(name))`, { headers: HEADERS });
@@ -432,7 +433,7 @@ async function loadPractitioners() {
         await loadProcedureFilters();
         renderPractitioners(allPractitioners);
     } catch (err) {
-        grid.innerHTML = `<p class="text-rose-500 text-center p-8">Erreur de connexion.</p>`;
+        grid.innerHTML = `<p class="text-red-500 text-center p-8">Erreur de connexion.</p>`;
     }
 }
 
@@ -456,11 +457,11 @@ async function loadProcedureFilters() {
 window.setProcedureFilter = function(procedureId, btn) {
     procedureFilter = procedureId;
     document.querySelectorAll('.procedure-chip').forEach(c => {
-        c.classList.remove('bg-rose-500', 'text-white', 'shadow-sm');
+        c.classList.remove('bg-blue-600', 'text-white');
         c.classList.add('bg-white', 'text-slate-500', 'border', 'border-slate-200');
     });
     btn.classList.remove('bg-white', 'text-slate-500', 'border', 'border-slate-200');
-    btn.classList.add('bg-rose-500', 'text-white', 'shadow-sm');
+    btn.classList.add('bg-blue-600', 'text-white');
 
     const filtered = procedureId
         ? allPractitioners.filter(p =>
@@ -482,18 +483,18 @@ function renderPractitioners(list) {
             .map(pp => pp.procedures?.name)
             .filter(Boolean);
         return `
-        <div class="group flex items-center gap-4 p-4 bg-white rounded-2xl border border-slate-100 hover:border-rose-200 hover:shadow-md transition-all">
-            <div class="w-14 h-14 bg-rose-50 rounded-2xl flex items-center justify-center flex-shrink-0 text-2xl">🧖</div>
+        <div class="group flex items-center gap-4 p-4 bg-white rounded-xl border border-slate-200 hover:border-blue-200 hover:shadow-sm transition-all">
+            <div class="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center flex-shrink-0 text-xl">🧑‍⚕️</div>
             <div class="flex-1 min-w-0">
-                <h3 class="font-bold text-slate-800">${escapeHtml(p.name)}</h3>
+                <h3 class="font-semibold text-slate-800">${escapeHtml(p.name)}</h3>
                 ${p.bio ? `<p class="text-sm text-slate-400 truncate">${escapeHtml(p.bio)}</p>` : ''}
                 ${procedures.length > 0 ? `
                 <div class="flex flex-wrap gap-1 mt-1.5">
-                    ${procedures.map(pr => `<span class="px-2 py-0.5 bg-rose-50 text-rose-400 text-[10px] font-bold rounded-full">${escapeHtml(pr)}</span>`).join('')}
+                    ${procedures.map(pr => `<span class="px-2 py-0.5 bg-slate-100 text-slate-500 text-[10px] font-medium rounded-full">${escapeHtml(pr)}</span>`).join('')}
                 </div>` : ''}
             </div>
             <button onclick="openBookingModal(${p.id}, '${escapeHtml(p.name)}')"
-                class="flex-shrink-0 px-4 py-2 bg-rose-500 text-white text-sm font-bold rounded-xl hover:bg-rose-600 active:scale-95 transition-all shadow-sm">
+                class="flex-shrink-0 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 active:scale-95 transition-all">
                 Réserver
             </button>
         </div>`;
@@ -505,7 +506,7 @@ function renderPractitioners(list) {
 window.openBookingModal = function(practitionerId, practitionerName) {
     currentPractitioner = { id: practitionerId, name: practitionerName };
     document.getElementById('booking-practitioner-info').innerHTML = `
-        <div class="w-10 h-10 bg-rose-100 rounded-xl flex items-center justify-center text-xl">🧖</div>
+        <div class="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-xl">🧑‍⚕️</div>
         <div>
             <p class="font-bold text-slate-800">${escapeHtml(practitionerName)}</p>
             <p class="text-xs text-slate-400">Sélectionnez une date ci-dessous</p>
@@ -531,8 +532,8 @@ window.switchAdminTab = function(tab) {
     document.getElementById('admin-procedures').classList.toggle('hidden', isPractitioners);
     document.getElementById('admin-practitioners').classList.toggle('hidden', !isPractitioners);
 
-    const activeClass = 'flex-1 py-2.5 rounded-2xl text-sm font-bold transition-all bg-rose-500 text-white shadow-sm';
-    const inactiveClass = 'flex-1 py-2.5 rounded-2xl text-sm font-bold transition-all bg-slate-100 text-slate-500 hover:bg-slate-200';
+    const activeClass = 'flex-1 py-2 rounded-lg text-sm font-semibold transition-all bg-white text-slate-800 shadow-sm';
+    const inactiveClass = 'flex-1 py-2 rounded-lg text-sm font-semibold transition-all text-slate-500 hover:text-slate-700';
     document.getElementById('tab-procedures').className = isPractitioners ? inactiveClass : activeClass;
     document.getElementById('tab-practitioners').className = isPractitioners ? activeClass : inactiveClass;
 };
