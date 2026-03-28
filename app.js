@@ -17,27 +17,18 @@ let lookupCache = {};
 let selectedIds = { indications: new Set(), zones: new Set(), technologies: new Set() };
 let ratings = { invasivite: 0, douleur: 0 };
 
-// Finder steps: each step asks a question and narrows down procedures
-const FINDER_STEPS = [
-    {
-        id: 'zone',
-        question: 'Quelle zone souhaitez-vous traiter ?',
-        options: ['Visage', 'Corps', 'Mains & Ongles', 'Cheveux & Cuir chevelu']
-    },
-    {
-        id: 'concern',
-        question: 'Quel est votre principal objectif ?',
-        options: ['Hydratation & Éclat', 'Anti-âge & Fermeté', 'Relaxation & Bien-être', 'Correction & Soin ciblé']
-    },
-    {
-        id: 'frequency',
-        question: 'À quelle fréquence souhaitez-vous venir ?',
-        options: ['Une fois (occasion spéciale)', 'Une fois par mois', 'Toutes les deux semaines', 'Cure intensive']
-    }
-];
-
-let finderAnswers = {};
-let currentStep = 0;
+let allFinderProcedures = [];
+let finderFilters = {
+    zones: new Set(),
+    indications: new Set(),
+    technologies: new Set(),
+    duree_eviction: new Set(),
+    duree_effets: new Set(),
+    prix_indicatifs: new Set(),
+    invasivite_max: 0,
+    douleur_max: 0
+};
+let labelMaps = { zones: {}, indications: {}, technologies: {}, durees_eviction: {}, durees_effets: {}, prix_indicatifs: {} };
 
 // --- 3. NAVIGATION ---
 
@@ -62,7 +53,7 @@ window.showSection = function(sectionId) {
         btn.classList.toggle('text-slate-500', sId !== sectionId);
     });
 
-    if (sectionId === 'finder-section') renderFinderStep();
+    if (sectionId === 'finder-section') loadFinderData();
     if (sectionId === 'booking-section') loadPractitioners();
     if (sectionId === 'admin-section') initProcedureForm();
 };
@@ -214,131 +205,208 @@ async function initProcedureForm() {
 
 // --- 4. FINDER ---
 
-function renderFinderStep() {
-    const content = document.getElementById('finder-content');
-    const results = document.getElementById('finder-results');
-    if (!content) return;
-
-    results.classList.add('hidden');
-    content.classList.remove('hidden');
-
-    const step = FINDER_STEPS[currentStep];
-    const progress = ((currentStep) / FINDER_STEPS.length) * 100;
-    document.getElementById('finder-progress-bar').style.width = `${progress}%`;
-
-    // Update step dots
-    FINDER_STEPS.forEach((_, i) => {
-        const dot = document.getElementById(`step-dot-${i + 1}`);
-        if (dot) {
-            dot.classList.toggle('bg-rose-400', i <= currentStep);
-            dot.classList.toggle('w-4', i === currentStep);
-            dot.classList.toggle('bg-slate-200', i > currentStep);
-        }
-    });
-
-    content.innerHTML = `
-        <span class="inline-block px-3 py-1 rounded-full bg-rose-50 text-rose-500 text-[10px] font-bold uppercase tracking-widest mb-4">
-            Étape ${currentStep + 1} / ${FINDER_STEPS.length}
-        </span>
-        <h2 class="text-xl font-extrabold text-slate-800 leading-tight mb-8">${step.question}</h2>
-        <div class="space-y-3">
-            ${step.options.map((opt, i) => `
-                <button onclick="selectFinderOption('${step.id}', '${opt}')"
-                    class="w-full text-left flex items-center gap-4 p-4 border-2 border-slate-100 rounded-2xl hover:border-rose-300 hover:bg-rose-50/40 transition-all group">
-                    <div class="w-5 h-5 border-2 border-slate-300 rounded-full flex-shrink-0 group-hover:border-rose-400 transition-all"></div>
-                    <span class="text-slate-700 font-medium text-sm group-hover:text-rose-700">${opt}</span>
-                </button>
-            `).join('')}
-        </div>
-        ${currentStep > 0 ? `
-        <button onclick="prevFinderStep()" class="mt-6 flex items-center gap-2 text-slate-400 hover:text-slate-600 text-sm font-semibold transition-all">
-            ← Retour
-        </button>` : ''}
-    `;
-}
-
-window.selectFinderOption = function(stepId, value) {
-    finderAnswers[stepId] = value;
-    if (currentStep < FINDER_STEPS.length - 1) {
-        currentStep++;
-        renderFinderStep();
-    } else {
-        showFinderResults();
-    }
-};
-
-window.prevFinderStep = function() {
-    if (currentStep > 0) {
-        currentStep--;
-        renderFinderStep();
-    }
-};
-
-async function showFinderResults() {
-    const content = document.getElementById('finder-content');
-    const results = document.getElementById('finder-results');
-    const loading = document.getElementById('finder-loading');
-
-    content.classList.add('hidden');
-    loading.classList.remove('hidden');
-    document.getElementById('finder-progress-bar').style.width = '100%';
+async function loadFinderData() {
+    const list = document.getElementById('finder-results-list');
+    if (!list) return;
+    list.innerHTML = `<div class="flex justify-center p-12"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-rose-400"></div></div>`;
 
     try {
-        const res = await fetch(`${SUPABASE_URL}/rest/v1/procedures?select=*`, { headers: HEADERS });
-        const procedures = await res.json() || [];
+        const select = [
+            'id,name,invasivite,douleur,note_communaute',
+            'durees_eviction(id,label)',
+            'durees_effets(id,label)',
+            'prix_indicatifs(id,label)',
+            'procedures_zones(zone_id,zones(id,label))',
+            'procedures_indications(indication_id,indications(id,label))',
+            'procedures_technologies(technologie_id,technologies(id,label))'
+        ].join(',');
 
-        // Filter by zone answer (category match)
-        const zone = finderAnswers['zone'] || '';
-        const matched = procedures.filter(p =>
-            !zone || (p.category || '').toLowerCase().includes(zone.split(' ')[0].toLowerCase())
-        );
-        const display = matched.length > 0 ? matched : procedures;
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/procedures?select=${encodeURIComponent(select)}`, { headers: HEADERS });
+        allFinderProcedures = await res.json() || [];
 
-        loading.classList.add('hidden');
-        results.classList.remove('hidden');
-
-        results.innerHTML = `
-            <div class="mb-6">
-                <span class="inline-block px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-bold uppercase tracking-widest mb-3">Résultats</span>
-                <h2 class="text-xl font-extrabold text-slate-800">Soins recommandés pour vous</h2>
-                <p class="text-sm text-slate-400 mt-1">D'après votre profil : <strong>${zone}</strong> · <strong>${finderAnswers['concern'] || ''}</strong></p>
-            </div>
-            <div class="space-y-3 mb-6">
-                ${display.map(p => `
-                    <div class="flex items-start gap-4 p-4 bg-white border-2 border-rose-100 rounded-2xl">
-                        <div class="w-10 h-10 bg-rose-50 rounded-xl flex items-center justify-center flex-shrink-0 text-xl">💆</div>
-                        <div class="flex-1 min-w-0">
-                            <h3 class="font-bold text-slate-800">${escapeHtml(p.name)}</h3>
-                            ${p.category ? `<span class="text-[10px] font-bold text-rose-400 uppercase tracking-wider">${escapeHtml(p.category)}</span>` : ''}
-                            ${p.description ? `<p class="text-sm text-slate-500 mt-1">${escapeHtml(p.description)}</p>` : ''}
-                            ${p.duration_minutes ? `<p class="text-xs text-slate-400 mt-1">⏱ ${p.duration_minutes} min</p>` : ''}
-                        </div>
-                    </div>
-                `).join('')}
-            </div>
-            <button onclick="showSection('booking-section')"
-                class="w-full py-4 bg-rose-500 text-white font-bold rounded-2xl hover:bg-rose-600 active:scale-[0.98] transition-all shadow-lg shadow-rose-100">
-                Réserver avec un praticien →
-            </button>
-            <button onclick="restartFinder()" class="w-full mt-3 py-3 text-slate-400 hover:text-slate-600 text-sm font-semibold transition-all">
-                Recommencer le questionnaire
-            </button>
-        `;
+        buildLabelMaps();
+        renderAllFilters();
+        renderFinderResults(allFinderProcedures);
     } catch (err) {
-        loading.classList.add('hidden');
-        results.classList.remove('hidden');
-        results.innerHTML = `<p class="text-rose-500 text-center p-8">Erreur de connexion. Veuillez réessayer.</p>`;
+        list.innerHTML = `<p class="text-rose-500 text-center p-8">Erreur de connexion.</p>`;
     }
 }
 
-window.restartFinder = function() {
-    finderAnswers = {};
-    currentStep = 0;
-    document.getElementById('finder-results').classList.add('hidden');
-    document.getElementById('finder-content').classList.remove('hidden');
-    document.getElementById('finder-progress-bar').style.width = '0%';
-    renderFinderStep();
+function buildLabelMaps() {
+    labelMaps = { zones: {}, indications: {}, technologies: {}, durees_eviction: {}, durees_effets: {}, prix_indicatifs: {} };
+    allFinderProcedures.forEach(p => {
+        (p.procedures_zones || []).forEach(pz => { if (pz.zones) labelMaps.zones[pz.zone_id] = pz.zones.label; });
+        (p.procedures_indications || []).forEach(pi => { if (pi.indications) labelMaps.indications[pi.indication_id] = pi.indications.label; });
+        (p.procedures_technologies || []).forEach(pt => { if (pt.technologies) labelMaps.technologies[pt.technologie_id] = pt.technologies.label; });
+        if (p.durees_eviction) labelMaps.durees_eviction[p.durees_eviction.id] = p.durees_eviction.label;
+        if (p.durees_effets) labelMaps.durees_effets[p.durees_effets.id] = p.durees_effets.label;
+        if (p.prix_indicatifs) labelMaps.prix_indicatifs[p.prix_indicatifs.id] = p.prix_indicatifs.label;
+    });
+}
+
+function getFilteredProcedures(excludeDimension = null) {
+    return allFinderProcedures.filter(p => {
+        if (excludeDimension !== 'zones' && finderFilters.zones.size > 0) {
+            const ids = (p.procedures_zones || []).map(pz => pz.zone_id);
+            if (!ids.some(id => finderFilters.zones.has(id))) return false;
+        }
+        if (excludeDimension !== 'indications' && finderFilters.indications.size > 0) {
+            const ids = (p.procedures_indications || []).map(pi => pi.indication_id);
+            if (!ids.some(id => finderFilters.indications.has(id))) return false;
+        }
+        if (excludeDimension !== 'technologies' && finderFilters.technologies.size > 0) {
+            const ids = (p.procedures_technologies || []).map(pt => pt.technologie_id);
+            if (!ids.some(id => finderFilters.technologies.has(id))) return false;
+        }
+        if (excludeDimension !== 'duree_eviction' && finderFilters.duree_eviction.size > 0) {
+            if (!p.durees_eviction || !finderFilters.duree_eviction.has(p.durees_eviction.id)) return false;
+        }
+        if (excludeDimension !== 'duree_effets' && finderFilters.duree_effets.size > 0) {
+            if (!p.durees_effets || !finderFilters.duree_effets.has(p.durees_effets.id)) return false;
+        }
+        if (excludeDimension !== 'prix_indicatifs' && finderFilters.prix_indicatifs.size > 0) {
+            if (!p.prix_indicatifs || !finderFilters.prix_indicatifs.has(p.prix_indicatifs.id)) return false;
+        }
+        if (excludeDimension !== 'invasivite_max' && finderFilters.invasivite_max > 0) {
+            if (!p.invasivite || p.invasivite > finderFilters.invasivite_max) return false;
+        }
+        if (excludeDimension !== 'douleur_max' && finderFilters.douleur_max > 0) {
+            if (!p.douleur || p.douleur > finderFilters.douleur_max) return false;
+        }
+        return true;
+    });
+}
+
+function getAvailableIds(dimension) {
+    const procs = getFilteredProcedures(dimension);
+    const ids = new Set();
+    procs.forEach(p => {
+        if (dimension === 'zones') (p.procedures_zones || []).forEach(pz => ids.add(pz.zone_id));
+        else if (dimension === 'indications') (p.procedures_indications || []).forEach(pi => ids.add(pi.indication_id));
+        else if (dimension === 'technologies') (p.procedures_technologies || []).forEach(pt => ids.add(pt.technologie_id));
+        else if (dimension === 'duree_eviction') { if (p.durees_eviction) ids.add(p.durees_eviction.id); }
+        else if (dimension === 'duree_effets') { if (p.durees_effets) ids.add(p.durees_effets.id); }
+        else if (dimension === 'prix_indicatifs') { if (p.prix_indicatifs) ids.add(p.prix_indicatifs.id); }
+    });
+    return ids;
+}
+
+function renderFilterChips(containerId, dimension, labelMap, activeSet) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    const available = getAvailableIds(dimension);
+    if (available.size === 0) {
+        container.innerHTML = '<span class="text-xs text-slate-300">—</span>';
+        return;
+    }
+    container.innerHTML = [...available].map(id => {
+        const label = labelMap[id] || id;
+        const isActive = activeSet.has(id);
+        return `<button type="button" onclick="toggleFinderFilter('${dimension}', ${id})"
+            class="px-2.5 py-1 rounded-full border text-xs font-semibold transition-all ${
+                isActive
+                    ? 'border-rose-400 bg-rose-50 text-rose-600'
+                    : 'border-slate-200 text-slate-500 hover:border-rose-300 hover:text-rose-500'
+            }">${escapeHtml(label)}</button>`;
+    }).join('');
+}
+
+function renderFilterRating(containerId, field, currentMax) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    container.innerHTML = [1, 2, 3, 4, 5].map(n => `
+        <button type="button" onclick="setFinderRatingFilter('${field}', ${n})"
+            class="w-8 h-8 rounded-full border text-xs font-bold transition-all ${
+                currentMax >= n
+                    ? 'border-rose-400 bg-rose-400 text-white'
+                    : 'border-slate-200 text-slate-400 hover:border-rose-300'
+            }">${n}</button>
+    `).join('');
+}
+
+function renderAllFilters() {
+    renderFilterChips('filter-zones', 'zones', labelMaps.zones, finderFilters.zones);
+    renderFilterChips('filter-indications', 'indications', labelMaps.indications, finderFilters.indications);
+    renderFilterChips('filter-technologies', 'technologies', labelMaps.technologies, finderFilters.technologies);
+    renderFilterChips('filter-prix', 'prix_indicatifs', labelMaps.prix_indicatifs, finderFilters.prix_indicatifs);
+    renderFilterChips('filter-eviction', 'duree_eviction', labelMaps.durees_eviction, finderFilters.duree_eviction);
+    renderFilterChips('filter-effets', 'duree_effets', labelMaps.durees_effets, finderFilters.duree_effets);
+    renderFilterRating('filter-invasivite', 'invasivite_max', finderFilters.invasivite_max);
+    renderFilterRating('filter-douleur', 'douleur_max', finderFilters.douleur_max);
+}
+
+window.toggleFinderFilter = function(dimension, id) {
+    const set = finderFilters[dimension];
+    if (set.has(id)) set.delete(id);
+    else set.add(id);
+    renderAllFilters();
+    renderFinderResults(getFilteredProcedures());
 };
+
+window.setFinderRatingFilter = function(field, value) {
+    finderFilters[field] = finderFilters[field] === value ? 0 : value;
+    renderAllFilters();
+    renderFinderResults(getFilteredProcedures());
+};
+
+window.resetFinderFilters = function() {
+    finderFilters = {
+        zones: new Set(), indications: new Set(), technologies: new Set(),
+        duree_eviction: new Set(), duree_effets: new Set(), prix_indicatifs: new Set(),
+        invasivite_max: 0, douleur_max: 0
+    };
+    renderAllFilters();
+    renderFinderResults(allFinderProcedures);
+};
+
+function renderDots(value) {
+    if (!value) return '<span class="text-slate-300 text-xs">—</span>';
+    return [1, 2, 3, 4, 5].map(n =>
+        `<span class="w-2 h-2 rounded-full inline-block ${n <= value ? 'bg-rose-400' : 'bg-slate-200'}"></span>`
+    ).join('');
+}
+
+function renderFinderResults(procedures) {
+    const list = document.getElementById('finder-results-list');
+    const countEl = document.getElementById('finder-results-count');
+    if (!list) return;
+
+    if (countEl) countEl.textContent = `${procedures.length} procédure${procedures.length !== 1 ? 's' : ''} trouvée${procedures.length !== 1 ? 's' : ''}`;
+
+    if (procedures.length === 0) {
+        list.innerHTML = `<div class="text-center p-12 text-slate-400">
+            <p class="text-4xl mb-3">🔍</p>
+            <p class="font-semibold">Aucun résultat</p>
+            <p class="text-sm mt-1">Essayez d'élargir vos filtres.</p>
+        </div>`;
+        return;
+    }
+
+    list.innerHTML = procedures.map(p => {
+        const zones = (p.procedures_zones || []).map(pz => pz.zones?.label).filter(Boolean);
+        const indications = (p.procedures_indications || []).map(pi => pi.indications?.label).filter(Boolean);
+        const technologies = (p.procedures_technologies || []).map(pt => pt.technologies?.label).filter(Boolean);
+
+        const tags = [
+            ...zones.map(l => `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-500">${escapeHtml(l)}</span>`),
+            ...indications.map(l => `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-violet-50 text-violet-500">${escapeHtml(l)}</span>`),
+            ...technologies.map(l => `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-600">${escapeHtml(l)}</span>`)
+        ].join('');
+
+        return `<div class="bg-white rounded-2xl border border-slate-100 p-5 hover:border-rose-200 hover:shadow-sm transition-all">
+            <h3 class="font-bold text-slate-800 text-base mb-2">${escapeHtml(p.name)}</h3>
+            ${tags ? `<div class="flex flex-wrap gap-1 mb-3">${tags}</div>` : ''}
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2 text-xs text-slate-500">
+                ${p.prix_indicatifs ? `<div><span class="text-slate-400">Prix </span><span class="font-semibold text-slate-700">${escapeHtml(p.prix_indicatifs.label)}</span></div>` : ''}
+                ${p.durees_eviction ? `<div><span class="text-slate-400">Éviction </span><span class="font-semibold text-slate-700">${escapeHtml(p.durees_eviction.label)}</span></div>` : ''}
+                ${p.durees_effets ? `<div><span class="text-slate-400">Effets </span><span class="font-semibold text-slate-700">${escapeHtml(p.durees_effets.label)}</span></div>` : ''}
+                ${p.invasivite ? `<div class="flex items-center gap-1.5"><span class="text-slate-400">Invasivité </span><span class="flex gap-0.5">${renderDots(p.invasivite)}</span></div>` : ''}
+                ${p.douleur ? `<div class="flex items-center gap-1.5"><span class="text-slate-400">Douleur </span><span class="flex gap-0.5">${renderDots(p.douleur)}</span></div>` : ''}
+                ${p.note_communaute != null ? `<div><span class="text-slate-400">Note </span><span class="font-semibold text-rose-500">${p.note_communaute}%</span></div>` : ''}
+            </div>
+        </div>`;
+    }).join('');
+}
 
 // --- 5. PRACTITIONERS ---
 

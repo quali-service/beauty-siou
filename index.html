@@ -40,43 +40,68 @@
     <main class="lg:ml-64 p-4 pb-24 lg:pb-8 min-h-screen flex items-center justify-center">
 
         <!-- ===== FINDER SECTION ===== -->
-        <section id="finder-section" class="hidden w-full max-w-lg animate-reveal">
+        <section id="finder-section" class="hidden w-full max-w-5xl animate-reveal self-start">
 
-            <div class="text-center mb-8">
-                <h1 class="text-3xl font-extrabold text-slate-800 tracking-tight">Quel soin vous correspond ?</h1>
-                <p class="text-slate-500 mt-2 text-sm">Répondez à quelques questions pour découvrir les soins adaptés à votre situation.</p>
+            <div class="mb-6">
+                <h1 class="text-3xl font-extrabold text-slate-800 tracking-tight">Trouver votre procédure</h1>
+                <p class="text-slate-500 mt-1 text-sm">Affinez les filtres pour découvrir les procédures adaptées.</p>
             </div>
 
-            <!-- Step indicator -->
-            <div id="step-indicator" class="flex items-center justify-center gap-2 mb-6">
-                <div id="step-dot-1" class="w-2 h-2 rounded-full bg-rose-400 transition-all"></div>
-                <div id="step-dot-2" class="w-2 h-2 rounded-full bg-slate-200 transition-all"></div>
-                <div id="step-dot-3" class="w-2 h-2 rounded-full bg-slate-200 transition-all"></div>
-            </div>
+            <div class="flex flex-col lg:flex-row gap-6 items-start">
 
-            <div class="glass-card rounded-[2rem] shadow-xl overflow-hidden">
-                <div class="h-1.5 w-full bg-slate-100">
-                    <div id="finder-progress-bar" class="h-full bg-rose-400 transition-all duration-500" style="width: 0%"></div>
+                <!-- Filter panel -->
+                <aside class="w-full lg:w-60 flex-shrink-0">
+                    <div class="bg-white rounded-3xl p-5 shadow-sm border border-slate-100 space-y-5 lg:sticky lg:top-6">
+                        <div class="flex items-center justify-between">
+                            <h2 class="text-sm font-bold text-slate-700">Filtres</h2>
+                            <button onclick="resetFinderFilters()" class="text-xs text-rose-400 font-semibold hover:text-rose-600 transition-all">Tout effacer</button>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Zone traitée</p>
+                            <div id="filter-zones" class="flex flex-wrap gap-1.5"></div>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Indication</p>
+                            <div id="filter-indications" class="flex flex-wrap gap-1.5"></div>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Technologie</p>
+                            <div id="filter-technologies" class="flex flex-wrap gap-1.5"></div>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Invasivité max</p>
+                            <div id="filter-invasivite" class="flex gap-1.5"></div>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Douleur max</p>
+                            <div id="filter-douleur" class="flex gap-1.5"></div>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Prix indicatif</p>
+                            <div id="filter-prix" class="flex flex-wrap gap-1.5"></div>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Durée d'éviction</p>
+                            <div id="filter-eviction" class="flex flex-wrap gap-1.5"></div>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Durée des effets</p>
+                            <div id="filter-effets" class="flex flex-wrap gap-1.5"></div>
+                        </div>
+                    </div>
+                </aside>
+
+                <!-- Results -->
+                <div class="flex-1 min-w-0">
+                    <div id="finder-results-count" class="text-xs text-slate-400 font-semibold mb-4"></div>
+                    <div id="finder-results-list">
+                        <div class="flex justify-center p-12">
+                            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-rose-400"></div>
+                        </div>
+                    </div>
                 </div>
-                <div class="p-6 sm:p-10">
 
-                    <div id="finder-loading" class="hidden flex flex-col items-center py-12 space-y-4">
-                        <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-rose-400"></div>
-                        <p class="text-slate-400 italic">Analyse en cours...</p>
-                    </div>
-
-                    <div id="finder-content">
-                        <!-- Steps injected by app.js -->
-                    </div>
-
-                    <div id="finder-results" class="hidden">
-                        <!-- Results injected by app.js -->
-                    </div>
-
-                </div>
             </div>
-
-            <p class="text-center text-xs text-slate-300 mt-4 select-none">← glisser pour revenir en arrière</p>
         </section>
 
         <!-- ===== BOOKING SECTION ===== -->
