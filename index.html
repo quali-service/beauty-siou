@@ -100,6 +100,10 @@
                             <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-2">Durée des effets</p>
                             <div id="filter-effets" class="flex flex-wrap gap-1.5"></div>
                         </div>
+                        <div>
+                            <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-2">Délai d'apparition</p>
+                            <div id="filter-delai" class="flex flex-wrap gap-1.5"></div>
+                        </div>
                     </div>
                 </aside>
 
@@ -303,6 +307,37 @@
                         <textarea name="resultats_attendus" rows="3"
                             class="w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-50 bg-white outline-none transition-all text-sm"
                             placeholder="Ce que le patient peut espérer..."></textarea>
+                    </div>
+
+                    <!-- Délai d'apparition des résultats -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Délai d'apparition des résultats</label>
+                        <div class="flex gap-2">
+                            <select id="delai-apparition-select" name="delai_apparition_id"
+                                class="flex-1 px-3 py-2.5 rounded-lg border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-50 bg-white outline-none transition-all text-sm text-slate-700">
+                                <option value="">-- Choisir --</option>
+                            </select>
+                            <button type="button" onclick="addLookupValue('delais_apparition')"
+                                class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-100 text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-all font-bold text-lg flex-shrink-0">
+                                +
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Fréquence & Entretien -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Fréquence & Entretien</label>
+                        <textarea name="frequence_entretien" rows="3"
+                            class="w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-50 bg-white outline-none transition-all text-sm"
+                            placeholder="À quelle fréquence et comment entretenir les résultats..."></textarea>
+                    </div>
+
+                    <!-- Contre-indications majeures -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Contre-indications majeures</label>
+                        <textarea name="contre_indications" rows="3"
+                            class="w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-50 bg-white outline-none transition-all text-sm"
+                            placeholder="Situations où la procédure est déconseillée..."></textarea>
                     </div>
 
                     <button type="submit" id="procedure-submit-btn"

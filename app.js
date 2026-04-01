@@ -25,6 +25,7 @@ let finderFilters = {
     duree_eviction: new Set(),
     duree_effets: new Set(),
     prix_indicatifs: new Set(),
+    delai_apparition: new Set(),
     invasivite_max: 0,
     douleur_max: 0
 };
@@ -62,7 +63,7 @@ window.showSection = function(sectionId) {
 // --- 3b. PROCEDURE FORM LOOKUPS ---
 
 async function loadAllLookups() {
-    const tables = ['indications', 'zones', 'technologies', 'durees_eviction', 'durees_effets', 'prix_indicatifs'];
+    const tables = ['indications', 'zones', 'technologies', 'durees_eviction', 'durees_effets', 'prix_indicatifs', 'delais_apparition'];
     await Promise.all(tables.map(async (table) => {
         try {
             const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?select=id,label&order=label`, { headers: HEADERS });
@@ -171,7 +172,8 @@ window.addLookupValue = async function(table) {
         const selectMap = {
             durees_eviction: 'duree-eviction-select',
             durees_effets: 'duree-effets-select',
-            prix_indicatifs: 'prix-indicatif-select'
+            prix_indicatifs: 'prix-indicatif-select',
+            delais_apparition: 'delai-apparition-select'
         };
 
         if (chipsMap[table]) {
@@ -200,6 +202,7 @@ async function initProcedureForm() {
     renderSelect('duree-eviction-select', 'durees_eviction');
     renderSelect('duree-effets-select', 'durees_effets');
     renderSelect('prix-indicatif-select', 'prix_indicatifs');
+    renderSelect('delai-apparition-select', 'delais_apparition');
     renderRating('invasivite-rating', 'invasivite');
     renderRating('douleur-rating', 'douleur');
 }
@@ -213,10 +216,11 @@ async function loadFinderData() {
 
     try {
         const select = [
-            'id,name,invasivite,douleur,note_communaute,description,deroulement,recommandations_post_op,resultats_attendus',
+            'id,name,invasivite,douleur,note_communaute,description,deroulement,recommandations_post_op,resultats_attendus,frequence_entretien,contre_indications',
             'durees_eviction(id,label)',
             'durees_effets(id,label)',
             'prix_indicatifs(id,label)',
+            'delais_apparition(id,label)',
             'procedures_zones(zone_id,zones(id,label))',
             'procedures_indications(indication_id,indications(id,label))',
             'procedures_technologies(technologie_id,technologies(id,label))'
@@ -234,7 +238,7 @@ async function loadFinderData() {
 }
 
 function buildLabelMaps() {
-    labelMaps = { zones: {}, indications: {}, technologies: {}, durees_eviction: {}, durees_effets: {}, prix_indicatifs: {} };
+    labelMaps = { zones: {}, indications: {}, technologies: {}, durees_eviction: {}, durees_effets: {}, prix_indicatifs: {}, delais_apparition: {} };
     allFinderProcedures.forEach(p => {
         (p.procedures_zones || []).forEach(pz => { if (pz.zones) labelMaps.zones[pz.zone_id] = pz.zones.label; });
         (p.procedures_indications || []).forEach(pi => { if (pi.indications) labelMaps.indications[pi.indication_id] = pi.indications.label; });
@@ -242,6 +246,7 @@ function buildLabelMaps() {
         if (p.durees_eviction) labelMaps.durees_eviction[p.durees_eviction.id] = p.durees_eviction.label;
         if (p.durees_effets) labelMaps.durees_effets[p.durees_effets.id] = p.durees_effets.label;
         if (p.prix_indicatifs) labelMaps.prix_indicatifs[p.prix_indicatifs.id] = p.prix_indicatifs.label;
+        if (p.delais_apparition) labelMaps.delais_apparition[p.delais_apparition.id] = p.delais_apparition.label;
     });
 }
 
@@ -268,6 +273,9 @@ function getFilteredProcedures(excludeDimension = null) {
         if (excludeDimension !== 'prix_indicatifs' && finderFilters.prix_indicatifs.size > 0) {
             if (!p.prix_indicatifs || !finderFilters.prix_indicatifs.has(p.prix_indicatifs.id)) return false;
         }
+        if (excludeDimension !== 'delai_apparition' && finderFilters.delai_apparition.size > 0) {
+            if (!p.delais_apparition || !finderFilters.delai_apparition.has(p.delais_apparition.id)) return false;
+        }
         if (excludeDimension !== 'invasivite_max' && finderFilters.invasivite_max > 0) {
             if (!p.invasivite || p.invasivite > finderFilters.invasivite_max) return false;
         }
@@ -288,6 +296,7 @@ function getAvailableIds(dimension) {
         else if (dimension === 'duree_eviction') { if (p.durees_eviction) ids.add(p.durees_eviction.id); }
         else if (dimension === 'duree_effets') { if (p.durees_effets) ids.add(p.durees_effets.id); }
         else if (dimension === 'prix_indicatifs') { if (p.prix_indicatifs) ids.add(p.prix_indicatifs.id); }
+        else if (dimension === 'delai_apparition') { if (p.delais_apparition) ids.add(p.delais_apparition.id); }
     });
     return ids;
 }
@@ -332,6 +341,7 @@ function renderAllFilters() {
     renderFilterChips('filter-prix', 'prix_indicatifs', labelMaps.prix_indicatifs, finderFilters.prix_indicatifs);
     renderFilterChips('filter-eviction', 'duree_eviction', labelMaps.durees_eviction, finderFilters.duree_eviction);
     renderFilterChips('filter-effets', 'duree_effets', labelMaps.durees_effets, finderFilters.duree_effets);
+    renderFilterChips('filter-delai', 'delai_apparition', labelMaps.delais_apparition, finderFilters.delai_apparition);
     renderFilterRating('filter-invasivite', 'invasivite_max', finderFilters.invasivite_max);
     renderFilterRating('filter-douleur', 'douleur_max', finderFilters.douleur_max);
 }
@@ -354,6 +364,7 @@ window.resetFinderFilters = function() {
     finderFilters = {
         zones: new Set(), indications: new Set(), technologies: new Set(),
         duree_eviction: new Set(), duree_effets: new Set(), prix_indicatifs: new Set(),
+        delai_apparition: new Set(),
         invasivite_max: 0, douleur_max: 0
     };
     renderAllFilters();
@@ -401,6 +412,7 @@ function renderFinderResults(procedures) {
                 ${p.prix_indicatifs ? `<div><span class="text-slate-400">Prix </span><span class="font-semibold text-slate-700">${escapeHtml(p.prix_indicatifs.label)}</span></div>` : ''}
                 ${p.durees_eviction ? `<div><span class="text-slate-400">Éviction </span><span class="font-semibold text-slate-700">${escapeHtml(p.durees_eviction.label)}</span></div>` : ''}
                 ${p.durees_effets ? `<div><span class="text-slate-400">Effets </span><span class="font-semibold text-slate-700">${escapeHtml(p.durees_effets.label)}</span></div>` : ''}
+                ${p.delais_apparition ? `<div><span class="text-slate-400">Délai résultats </span><span class="font-semibold text-slate-700">${escapeHtml(p.delais_apparition.label)}</span></div>` : ''}
                 ${p.invasivite ? `<div class="flex items-center gap-1.5"><span class="text-slate-400">Invasivité </span><span class="flex gap-0.5">${renderDots(p.invasivite)}</span></div>` : ''}
                 ${p.douleur ? `<div class="flex items-center gap-1.5"><span class="text-slate-400">Douleur </span><span class="flex gap-0.5">${renderDots(p.douleur)}</span></div>` : ''}
                 ${p.note_communaute != null ? `<div><span class="text-slate-400">Note de la communauté </span><span class="font-semibold text-blue-700">${p.note_communaute}%</span></div>` : ''}
@@ -408,6 +420,8 @@ function renderFinderResults(procedures) {
             ${[
                 { label: 'Description', value: p.description },
                 { label: 'Déroulement', value: p.deroulement },
+                { label: 'Fréquence & Entretien', value: p.frequence_entretien },
+                { label: 'Contre-indications majeures', value: p.contre_indications },
                 { label: 'Recommandations post-op', value: p.recommandations_post_op },
                 { label: 'Résultats attendus', value: p.resultats_attendus }
             ].filter(f => f.value).map(f => `
@@ -609,6 +623,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 deroulement: formData.get('deroulement') || null,
                 recommandations_post_op: formData.get('recommandations_post_op') || null,
                 resultats_attendus: formData.get('resultats_attendus') || null,
+                delai_apparition_id: formData.get('delai_apparition_id') || null,
+                frequence_entretien: formData.get('frequence_entretien') || null,
+                contre_indications: formData.get('contre_indications') || null,
                 created_at: new Date().toISOString()
             };
 
