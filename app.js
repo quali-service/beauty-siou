@@ -419,7 +419,7 @@ function renderFinderResults(procedures) {
             </div>
             ${[
                 { label: 'Description', value: p.description },
-                { label: 'Famille de soin', value: p.technologie_utilisee },
+                { label: 'Technologie utilisée', value: p.technologie_utilisee },
                 { label: 'Déroulement', value: p.deroulement },
                 { label: 'Fréquence & Entretien', value: p.frequence_entretien },
                 { label: 'Contre-indications majeures', value: p.contre_indications },
