@@ -216,7 +216,7 @@ async function loadFinderData() {
 
     try {
         const select = [
-            'id,name,invasivite,douleur,note_communaute,description,deroulement,recommandations_post_op,resultats_attendus,frequence_entretien,contre_indications',
+            'id,name,invasivite,douleur,note_communaute,description,technologie_utilisee,deroulement,recommandations_post_op,resultats_attendus,frequence_entretien,contre_indications',
             'durees_eviction(id,label)',
             'durees_effets(id,label)',
             'prix_indicatifs(id,label)',
@@ -419,6 +419,7 @@ function renderFinderResults(procedures) {
             </div>
             ${[
                 { label: 'Description', value: p.description },
+                { label: 'Technologie utilisée', value: p.technologie_utilisee },
                 { label: 'Déroulement', value: p.deroulement },
                 { label: 'Fréquence & Entretien', value: p.frequence_entretien },
                 { label: 'Contre-indications majeures', value: p.contre_indications },
@@ -620,6 +621,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 douleur: ratings.douleur || null,
                 note_communaute: noteCommunaute !== '' ? parseFloat(noteCommunaute) : null,
                 description: formData.get('description') || null,
+                technologie_utilisee: formData.get('technologie_utilisee') || null,
                 deroulement: formData.get('deroulement') || null,
                 recommandations_post_op: formData.get('recommandations_post_op') || null,
                 resultats_attendus: formData.get('resultats_attendus') || null,
